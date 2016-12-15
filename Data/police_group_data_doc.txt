@@ -1,0 +1,73 @@
+The analysis of policing information in Champaign-Urbana Metropolitan Area was based on the analysis of arrest data collected in Area-wide Record Management System (A.R.M.S.) of the following Police Departments:
+1.	City of Champaign
+2.	City of Urbana 
+3.	University of Illinois
+The required data was requested through Freedom of Information Act (FOIA request) and provided in the format of .csv files for the period since January 1st2010 until November 2016 (last records in the system). The analyzed police departments basically cover Champaign-Urbana urbanized area. 
+The data for the Village of Rantoul and Champaign County Sheriff was not used in the research due to the difference in the format of its collection. The Village of Rantoul Police Department has joined the A.R.M.S. agreement only after August 2014 and the County Sheriff office has started to collect the data in the same format since the beginning of 2015, thus the data can not be fully integrated with Champaign, Urbana and the University of Illinois police departments data. Sheriff and Rantoul data, as well as all provided incident data were not used in this project.
+The provided arrest data has the following variables:
+	Variable	Example
+1	DATE_OF_ARREST		01.01.2010
+2	TIME_OF_ARREST		00:01
+3	ARREST_CODE		A10-00001
+4	LOCATION_OF_ARREST	618 E DANIEL
+5	CRIME CODE		1330
+6	CRIME_CODE_DESCRIPTION	TRESPASS TO LAND/REAL PROPERTY
+7	WEAPON_CODE_#1	
+8	WEAPON_CODE_#2	
+9	WEAPON_CODE_#3	
+10	RACE_DESCRIPTION	WHITE
+11	SEX_DESCRIPTION		MALE
+12	AGE_AT_ARREST		18
+13	EMPLOYMENT_CODE		N
+14	ARRESTING_OFFICER_#1	 7799
+15	BONDED_OUT	
+16	TAKEN_TO_JAIL		X
+17	NOTICE_TO_APPEAR	
+18	INDIVIDUAL_BOND	
+19	PROMISE_TO_COMPLY	
+Table 1: Initial data structure.
+
+The operator of A.R.M.S. has provided the following information about the data:
+•	“The database allows the entry of up to 3 weapons, so we have provided all three of those fields. Codes are provided, and the associated values are listed below.
+•	The Location entry field is a textbox, and not a structured address field. Whatever was entered is included in the data.
+•	The Employment status does not have a description associated with the values, but they are listed below.
+•	[…] We are providing the Type of Arrest as the “Status”. In ARMS, this is captured by selecting one of the following options: Taken to Jail, Notice To Appear, Individual Bond, Bonded Out (no longer used, but appears in data before 2014), and Promise to Comply.
+•	ARMS has a “City Code” for the incident’s location. 4-character values are used in the entry instead of Cities. A list of City codes appears below.
+•	The list of crimes includes State and Local ordinances. Administrative codes, which
+have “Crime Code” values that are 9000 and higher, were not included because they
+are not actually crimes.”
+•	The name of the detained person was not provided in the data to ensure leak of the personal information, however it has limited the possibilities of data integration to a certain degree.
+
+For the further analysis of provided A.R.M.S. data, there were made the following manipulations with the data:
+1)	The five types of the arrest (BONDED_OUT, TAKEN_TO_JAIL, NOTICE_TO_APPEAR, INDIVIDUAL_BOND, PROMISE_TO_COMPLY) were combined into one column “Result”.
+2)	The “PD” represents a source of the information – Champaign, Urbana or U of I police departments.
+3)	“A frequent occurrence is for someone to be arrested for multiple crimes. (For example: one person could receive multiple traffic tickets.) Because this information was requested at the crime level of detail, a single arrestee will appear multiple times – even though it’s the same person. So this listing is not an accurate way to count “how many people were arrested”… but it is an accurate way to analyze what people were arrested for.”
+This table was called “arrests”. To assist with interpreting this information and to analyze the information about detained persons, the “ID” parameter was added to the table, representing the code for each single arrest no matter how many crimes the person committed. The “ID” was created in Excel using multiple “IF” functions. It was assumed that the ID number would be the same if time and location, as well as age and race of detained person remain the same. However, if the crime code is the same, the algorithm would create a new ID (there might be multiple persons of the same race and age arrested simultaneously at the same location, example – multiple MIP cases in campustown). As a result, out of 138,995 reported crimes, there are only 110,217 detained persons. Thus, there are 28,788 persons, who got arrested for multiple crime offences.
+Based on this, there was created a column “More_than_one_charge”, a dummy variable representing the fact of multiple criminal offences leading to the arrest.
+4)	Based on the ID variable, there was created a separate table “arrestees” for the analysis of detained persons. In case, there are multiple charges for a person the table would show only the first one.
+5)	Since there are around 450 crime codes in the initial database, it was decided to combine similar crimes into crime categories based on the classification provided on the City of Urbana Open Data Portal . Because of the limitations of Urbana’s classification and a large number of crime codes which doesn’t have any crime category, there were created four additional categories for the most prevalent crime codes: MIP, Unlawful use of I.D., Bicyclist violation, Noise. Some of the crime codes were added to classification. As a result, there are 35 crime categories.
+6)	The most prevalent crime category “Motor vehicle offences” (MVO) accounts for more than a half of total criminal charges in Champaign-Urbana. The goal is to analyze the cases when the person who was stopped for the motor vehicle offence (speeding, broken light, etc.) was arrested for a more severe crime.
+The resulting table with additional variables looks according to the example below:
+	Variable 	Example	Description
+1	ID	1	ID for arrested person
+2	DATE_OF_ARREST	01.01.2010	Date of arrest
+3	TIME_OF_ARREST	0:01	Time of arrest
+4	ARREST_CODE	A10-00001	Arrest code – individual for each offence (may be multiple for the same arrested person)
+5	LOCATION_OF_ARREST	618 E DANIEL	Address of the arrest
+6	CRIME CODE	1330	Crime code 
+7	CRIME_CODE_DESCRIPTION	TRESPASS TO LAND/REAL PROPERTY	Description of the crime code in accordance with police classification
+8	CRIME_CODE_CATEGORY	C17	Crime category
+9	CRIME_CODE_CATEGORY_DESCRIPTION	Crim Damage & Trespass to Prop	Description of crime category
+10	WEAPON_CODE_#1		Weapon code #1 (see Table 2)
+11	WEAPON_CODE_#2		Weapon code #2 (see Table 2)
+12	WEAPON_CODE_#3		Weapon code #3 (see Table 2)
+13	RACE_DESCRIPTION	WHITE	Race description (A.R.M.S. races/ethnicities)
+14	SEX_DESCRIPTION	MALE	Sex description
+15	AGE_AT_ARREST	18	Age at arrest
+16	EMPLOYMENT_CODE	N	Employment status (see Table 3) 
+17	ARRESTING_OFFICER_#1	7799	Badge number of an arresting officer
+18	Result	TAKEN_TO_JAIL	Resolution type (taken to jail, bonded out, individual bond or notice to appear – ARMS classification)
+19	PD	Champaign	Police department
+20	More_than_one_charge	0	Dummy Variable – if the arrestee has more than one charge
+21	MVO	0	Dummy Variable – if one of the charges is a Motor Vehicle Offence (a person was pulled over)
+Table 2: Final arrests variables
